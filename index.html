@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>英検スピーキングチャレンジ - 語句整序ゲーム</title>
+<style>
+/* ===== Reset & Base ===== */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{font-size:16px}
+body{font-family:'Segoe UI','Hiragino Sans','Meiryo',sans-serif;background:#f0f4ff;color:#333;min-height:100vh;overflow-x:hidden}
+
+/* ===== Utility ===== */
+.hidden{display:none!important}
+.container{max-width:800px;margin:0 auto;padding:20px}
+
+/* ===== Header ===== */
+.app-header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;text-align:center;padding:20px 0;box-shadow:0 4px 15px rgba(102,126,234,.4)}
+.app-header h1{font-size:1.6rem;font-weight:700;letter-spacing:.05em}
+.app-header p{font-size:.85rem;opacity:.85;margin-top:4px}
+
+/* ===== Screen: Course Select ===== */
+#screen-select{text-align:center;padding-top:30px}
+#screen-select h2{font-size:1.3rem;margin-bottom:24px;color:#4a5568}
+
+.grade-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:30px}
+.grade-btn{padding:18px 10px;border:none;border-radius:14px;font-size:1.05rem;font-weight:700;color:#fff;cursor:pointer;transition:transform .15s,box-shadow .15s;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.grade-btn:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.grade-btn:active{transform:translateY(0)}
+.grade-5{background:linear-gradient(135deg,#43e97b,#38f9d7)}
+.grade-4{background:linear-gradient(135deg,#fa709a,#fee140)}
+.grade-3{background:linear-gradient(135deg,#a18cd1,#fbc2eb)}
+.grade-pre2{background:linear-gradient(135deg,#fbc2eb,#a6c1ee)}
+.grade-2{background:linear-gradient(135deg,#f6d365,#fda085)}
+
+/* Level select */
+#level-select{margin-top:10px}
+#level-select h3{font-size:1.1rem;margin-bottom:16px;color:#4a5568}
+.level-grid{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+.level-btn{width:64px;height:64px;border:none;border-radius:50%;font-size:1.2rem;font-weight:700;color:#fff;background:linear-gradient(135deg,#667eea,#764ba2);cursor:pointer;transition:transform .15s,box-shadow .15s;box-shadow:0 3px 10px rgba(102,126,234,.4)}
+.level-btn:hover{transform:scale(1.12);box-shadow:0 5px 18px rgba(102,126,234,.5)}
+.back-btn{margin-top:20px;padding:10px 28px;border:2px solid #667eea;border-radius:10px;background:#fff;color:#667eea;font-size:.95rem;font-weight:600;cursor:pointer;transition:all .15s}
+.back-btn:hover{background:#667eea;color:#fff}
+
+/* ===== Screen: Gameplay ===== */
+#screen-game{padding-top:20px;text-align:center;position:relative}
+
+.game-info{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;font-size:.9rem;color:#666}
+.game-info .badge{background:#667eea;color:#fff;padding:4px 14px;border-radius:20px;font-weight:600}
+
+/* Timer bar */
+.timer-bar-wrap{width:100%;height:12px;background:#e2e8f0;border-radius:6px;overflow:hidden;margin-bottom:20px}
+.timer-bar{height:100%;background:linear-gradient(90deg,#43e97b,#38f9d7);border-radius:6px;transition:width .3s linear}
+.timer-bar.warn{background:linear-gradient(90deg,#f6d365,#fda085)}
+.timer-bar.danger{background:linear-gradient(90deg,#ff416c,#ff4b2b);animation:pulse-bar .5s infinite alternate}
+@keyframes pulse-bar{0%{opacity:1}100%{opacity:.6}}
+
+.timer-text{font-size:2rem;font-weight:700;margin-bottom:10px}
+.timer-text.danger-text{color:#e53e3e;animation:shake .3s infinite alternate}
+@keyframes shake{0%{transform:translateX(-2px)}100%{transform:translateX(2px)}}
+
+/* Question area */
+.question-jp{font-size:.95rem;color:#718096;margin-bottom:14px}
+.word-tiles{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-bottom:24px;min-height:60px}
+.word-tile{padding:10px 18px;background:#fff;border:2px solid #cbd5e0;border-radius:12px;font-size:1.1rem;font-weight:600;color:#2d3748;box-shadow:0 2px 6px rgba(0,0,0,.08);animation:pop-in .3s ease backwards}
+@keyframes pop-in{0%{transform:scale(0);opacity:0}100%{transform:scale(1);opacity:1}}
+
+/* Speech area */
+.speech-area{margin-bottom:20px}
+.mic-btn{width:80px;height:80px;border:none;border-radius:50%;font-size:2.2rem;cursor:pointer;transition:transform .15s,box-shadow .15s;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;box-shadow:0 4px 15px rgba(102,126,234,.4)}
+.mic-btn:hover{transform:scale(1.08)}
+.mic-btn.recording{background:linear-gradient(135deg,#ff416c,#ff4b2b);animation:pulse-mic 1s infinite}
+@keyframes pulse-mic{0%{box-shadow:0 0 0 0 rgba(255,65,108,.5)}70%{box-shadow:0 0 0 20px rgba(255,65,108,0)}100%{box-shadow:0 0 0 0 rgba(255,65,108,0)}}
+.mic-label{display:block;margin-top:8px;font-size:.8rem;color:#888}
+
+.recognized-text{min-height:40px;padding:10px 16px;background:#fff;border-radius:10px;font-size:1rem;color:#2d3748;border:2px solid #e2e8f0;margin-top:14px;transition:border-color .2s}
+.recognized-text.correct{border-color:#48bb78;background:#f0fff4}
+.recognized-text.wrong{border-color:#fc8181;background:#fff5f5}
+
+/* Bomb overlay */
+.bomb-overlay{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:100}
+.bomb-character{position:absolute;bottom:20%;left:50%;transform:translateX(-50%);text-align:center;animation:bomb-bounce 1s ease infinite}
+@keyframes bomb-bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-20px)}}
+.bomb-emoji{font-size:6rem;display:block;filter:drop-shadow(0 4px 8px rgba(0,0,0,.3))}
+.bomb-timer{font-size:2.5rem;font-weight:900;color:#e53e3e;text-shadow:0 2px 8px rgba(229,62,62,.5)}
+.animal-char{font-size:4rem;position:absolute;bottom:25%;animation:run-around 3s ease infinite}
+.animal-char.left{left:10%;animation-delay:0s}
+.animal-char.right{right:10%;animation-delay:.5s}
+@keyframes run-around{0%,100%{transform:translateY(0) scale(1)}25%{transform:translateY(-15px) scale(1.05)}50%{transform:translateY(0) scale(1)}75%{transform:translateY(-10px) scale(.95)}}
+
+/* Explosion */
+.explosion-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,50,50,.9);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;animation:flash-in .2s}
+@keyframes flash-in{0%{opacity:0}100%{opacity:1}}
+.explosion-text{font-size:5rem;animation:explode .5s ease}
+@keyframes explode{0%{transform:scale(0) rotate(-20deg)}60%{transform:scale(1.3) rotate(10deg)}100%{transform:scale(1) rotate(0deg)}}
+.explosion-msg{color:#fff;font-size:1.5rem;font-weight:700;margin-top:16px}
+
+/* ===== Screen: Result ===== */
+#screen-result{padding-top:30px;text-align:center}
+.result-icon{font-size:5rem;margin-bottom:10px}
+.result-title{font-size:1.5rem;font-weight:700;margin-bottom:20px}
+.result-title.correct-title{color:#38a169}
+.result-title.wrong-title{color:#e53e3e}
+
+.result-card{background:#fff;border-radius:16px;padding:24px;box-shadow:0 4px 20px rgba(0,0,0,.08);text-align:left;margin-bottom:20px}
+.result-card h4{font-size:.85rem;color:#a0aec0;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.result-card .answer-en{font-size:1.2rem;font-weight:700;color:#2d3748;margin-bottom:12px}
+.result-card .answer-jp{font-size:1rem;color:#718096;margin-bottom:16px}
+.result-card .grammar-point{background:#f7fafc;border-left:4px solid #667eea;padding:12px 16px;border-radius:0 8px 8px 0;font-size:.9rem;line-height:1.6;color:#4a5568}
+
+.listen-btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border:none;border-radius:12px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:1rem;font-weight:600;cursor:pointer;transition:transform .15s;margin-bottom:16px}
+.listen-btn:hover{transform:scale(1.05)}
+
+.nav-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.nav-btn{padding:12px 28px;border:none;border-radius:12px;font-size:1rem;font-weight:600;cursor:pointer;transition:transform .15s}
+.nav-btn:hover{transform:translateY(-2px)}
+.nav-btn.primary{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;box-shadow:0 4px 12px rgba(102,126,234,.3)}
+.nav-btn.secondary{background:#fff;color:#667eea;border:2px solid #667eea}
+
+/* ===== Question counter / progress ===== */
+.progress-wrap{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:12px}
+.progress-dots{display:flex;gap:6px}
+.progress-dot{width:12px;height:12px;border-radius:50%;background:#e2e8f0;transition:background .2s}
+.progress-dot.done-correct{background:#48bb78}
+.progress-dot.done-wrong{background:#fc8181}
+.progress-dot.current{background:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,.3)}
+
+/* Score summary */
+.score-summary{background:#fff;border-radius:16px;padding:24px;box-shadow:0 4px 20px rgba(0,0,0,.08);margin-bottom:20px}
+.score-summary h3{font-size:1.2rem;margin-bottom:16px;color:#4a5568}
+.score-big{font-size:3rem;font-weight:900;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.score-detail{margin-top:10px;font-size:.95rem;color:#718096}
+
+/* ===== Responsive ===== */
+@media(max-width:480px){
+  .app-header h1{font-size:1.2rem}
+  .word-tile{padding:8px 12px;font-size:.95rem}
+  .mic-btn{width:68px;height:68px;font-size:1.8rem}
+  .bomb-emoji{font-size:4rem}
+  .bomb-timer{font-size:2rem}
+  .timer-text{font-size:1.6rem}
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="app-header">
+  <h1>🎙️ 英検スピーキングチャレンジ</h1>
+  <p>声に出して英文を完成させよう！</p>
+</header>
+
+<!-- Screen: Course Select -->
+<div id="screen-select" class="container">
+  <div id="grade-select">
+    <h2>級を選んでね</h2>
+    <div class="grade-grid">
+      <button class="grade-btn grade-5" onclick="selectGrade('5')">英検5級</button>
+      <button class="grade-btn grade-4" onclick="selectGrade('4')">英検4級</button>
+      <button class="grade-btn grade-3" onclick="selectGrade('3')">英検3級</button>
+      <button class="grade-btn grade-pre2" onclick="selectGrade('pre2')">英検準2級</button>
+      <button class="grade-btn grade-2" onclick="selectGrade('2')">英検2級</button>
+    </div>
+  </div>
+  <div id="level-select" class="hidden">
+    <h3 id="level-title">レベルを選んでね</h3>
+    <div class="level-grid">
+      <button class="level-btn" onclick="selectLevel(1)">1</button>
+      <button class="level-btn" onclick="selectLevel(2)">2</button>
+      <button class="level-btn" onclick="selectLevel(3)">3</button>
+      <button class="level-btn" onclick="selectLevel(4)">4</button>
+      <button class="level-btn" onclick="selectLevel(5)">5</button>
+    </div>
+    <button class="back-btn" onclick="backToGrades()">← 級選択に戻る</button>
+  </div>
+</div>
+
+<!-- Screen: Game -->
+<div id="screen-game" class="container hidden">
+  <div class="game-info">
+    <span class="badge" id="game-badge">英検5級 Lv.1</span>
+    <span id="q-counter">1 / 5</span>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-dots" id="progress-dots"></div>
+  </div>
+  <div class="timer-bar-wrap"><div class="timer-bar" id="timer-bar"></div></div>
+  <div class="timer-text" id="timer-text">30</div>
+  <p class="question-jp" id="question-jp">日本語訳がここに表示されます</p>
+  <div class="word-tiles" id="word-tiles"></div>
+  <div class="speech-area">
+    <button class="mic-btn" id="mic-btn" onclick="toggleRecognition()">🎤</button>
+    <span class="mic-label" id="mic-label">タップして話す</span>
+    <div class="recognized-text" id="recognized-text">ここに認識結果が表示されます</div>
+  </div>
+  <!-- Bomb overlay (hidden until 10s) -->
+  <div class="bomb-overlay hidden" id="bomb-overlay">
+    <div class="animal-char left">🐱</div>
+    <div class="animal-char right">🐶</div>
+    <div class="bomb-character">
+      <span class="bomb-emoji">💣</span>
+      <span class="bomb-timer" id="bomb-timer">10</span>
+    </div>
+  </div>
+</div>
+
+<!-- Explosion overlay -->
+<div class="explosion-overlay hidden" id="explosion-overlay">
+  <div class="explosion-text">💥</div>
+  <div class="explosion-msg">ドカーン！タイムアップ！</div>
+</div>
+
+<!-- Screen: Result (per-question) -->
+<div id="screen-result" class="container hidden">
+  <div class="result-icon" id="result-icon">⭕</div>
+  <div class="result-title" id="result-title">正解！すごい！</div>
+  <div class="result-card">
+    <h4>正解の英文</h4>
+    <div class="answer-en" id="result-en">I play tennis every day.</div>
+    <h4>日本語訳</h4>
+    <div class="answer-jp" id="result-jp">私は毎日テニスをします。</div>
+    <h4>文法ポイント</h4>
+    <div class="grammar-point" id="result-grammar">一般動詞の現在形の文です。</div>
+  </div>
+  <button class="listen-btn" onclick="speakAnswer()">🔊 音声を聴く</button>
+  <div class="nav-btns">
+    <button class="nav-btn primary" id="next-btn" onclick="nextQuestion()">次の問題へ →</button>
+    <button class="nav-btn secondary" onclick="goHome()">ホームに戻る</button>
+  </div>
+</div>
+
+<!-- Screen: Final Score -->
+<div id="screen-score" class="container hidden">
+  <div class="result-icon">🏆</div>
+  <div class="score-summary">
+    <h3 id="score-grade-label">英検5級 Lv.1 結果</h3>
+    <div class="score-big" id="score-big">0 / 5</div>
+    <div class="score-detail" id="score-detail"></div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-dots" id="final-dots"></div>
+  </div>
+  <div class="nav-btns" style="margin-top:20px">
+    <button class="nav-btn primary" onclick="retryLevel()">もう一度チャレンジ</button>
+    <button class="nav-btn secondary" onclick="goHome()">ホームに戻る</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// Question Bank - 英検5級〜2級, Level 1〜5, 各5問
+// ============================================================
+const QUESTIONS = {
+  "5": {
+    name: "英検5級",
+    levels: {
+      1: [
+        { en: "I like apples.", jp: "私はりんごが好きです。", grammar: "「I like ～.」は「私は～が好きです」という意味の基本文型です。like の後に好きなものを置きます。" },
+        { en: "This is a pen.", jp: "これはペンです。", grammar: "「This is ～.」は「これは～です」という紹介の表現です。a は「1つの」を意味する冠詞です。" },
+        { en: "I play tennis.", jp: "私はテニスをします。", grammar: "「I play ～.」で「私は～をします」というスポーツの表現です。play はスポーツや楽器に使います。" },
+        { en: "She is my sister.", jp: "彼女は私の姉（妹）です。", grammar: "「She is ～.」は「彼女は～です」。my は「私の」という所有格です。" },
+        { en: "I have a dog.", jp: "私は犬を飼っています。", grammar: "「I have ～.」は「私は～を持っています / 飼っています」。have は所有を表す基本動詞です。" }
+      ],
+      2: [
+        { en: "He is a student.", jp: "彼は学生です。", grammar: "「He is ～.」は「彼は～です」。a student で「一人の学生」を表します。" },
+        { en: "I go to school.", jp: "私は学校に行きます。", grammar: "「go to ～」は「～へ行く」。school の前に the はつけないのが一般的です。" },
+        { en: "Do you like music?", jp: "あなたは音楽が好きですか？", grammar: "Do you ～? は一般動詞の疑問文です。Yes, I do. / No, I don't. で答えます。" },
+        { en: "I can swim well.", jp: "私は上手に泳げます。", grammar: "can は「～できる」を表す助動詞です。well は「上手に」という副詞です。" },
+        { en: "What is this?", jp: "これは何ですか？", grammar: "What is ～? は「～は何ですか？」という疑問文です。What は「何」を意味する疑問詞です。" }
+      ],
+      3: [
+        { en: "I eat breakfast every day.", jp: "私は毎日朝食を食べます。", grammar: "every day は「毎日」。習慣を表す現在形と一緒に使います。" },
+        { en: "My mother is kind.", jp: "私の母は優しいです。", grammar: "形容詞 kind（優しい）を be 動詞の後に置いて、人の性格を表現します。" },
+        { en: "Where is the library?", jp: "図書館はどこですか？", grammar: "Where is ～? は場所をたずねる疑問文です。Where は「どこ」を意味します。" },
+        { en: "How many books do you have?", jp: "あなたは本を何冊持っていますか？", grammar: "How many ～? は数をたずねる表現です。数えられる名詞の複数形と使います。" },
+        { en: "I don't like winter.", jp: "私は冬が好きではありません。", grammar: "don't (do not) を動詞の前に置くと否定文になります。" }
+      ],
+      4: [
+        { en: "There is a cat on the bed.", jp: "ベッドの上に猫がいます。", grammar: "There is ～. は「～があります / います」。場所を表す前置詞 on（～の上に）も重要です。" },
+        { en: "I want to be a teacher.", jp: "私は先生になりたいです。", grammar: "want to be ～ は「～になりたい」。to be は be 動詞の原形です。" },
+        { en: "She plays the piano very well.", jp: "彼女はとても上手にピアノを弾きます。", grammar: "三人称単数現在形で plays と s がつきます。the piano と楽器には the をつけます。" },
+        { en: "When is your birthday?", jp: "あなたの誕生日はいつですか？", grammar: "When is ～? は時をたずねる疑問文です。When は「いつ」を意味します。" },
+        { en: "I am reading a book now.", jp: "私は今本を読んでいます。", grammar: "am reading は現在進行形（be動詞 + ～ing）で「今～しているところ」を表します。" }
+      ],
+      5: [
+        { en: "Whose bag is this?", jp: "これは誰のかばんですか？", grammar: "Whose ～? は「誰の～？」と持ち主をたずねる疑問文です。" },
+        { en: "Let's go to the park.", jp: "公園に行きましょう。", grammar: "Let's ～. は「～しましょう」という勧誘の表現です。" },
+        { en: "He can run very fast.", jp: "彼はとても速く走れます。", grammar: "can + 動詞の原形で「～できる」。fast は「速く」という副詞です。" },
+        { en: "I usually get up at seven.", jp: "私はたいてい7時に起きます。", grammar: "usually は「たいてい」という頻度の副詞です。get up は「起きる」という句動詞です。" },
+        { en: "Which color do you like?", jp: "あなたはどの色が好きですか？", grammar: "Which ～? は「どの～？」と選択をたずねる疑問詞です。" }
+      ]
+    }
+  },
+  "4": {
+    name: "英検4級",
+    levels: {
+      1: [
+        { en: "I was very tired yesterday.", jp: "私は昨日とても疲れていました。", grammar: "was は be 動詞の過去形です。yesterday（昨日）と一緒に過去の状態を表します。" },
+        { en: "She went to the store.", jp: "彼女はお店に行きました。", grammar: "went は go の過去形（不規則変化）です。過去の動作を表します。" },
+        { en: "I have been to Kyoto.", jp: "私は京都に行ったことがあります。", grammar: "have been to ～ は「～に行ったことがある」という経験を表す現在完了形です。" },
+        { en: "It is raining outside.", jp: "外は雨が降っています。", grammar: "It is raining は天気を表す現在進行形です。天気の主語は it を使います。" },
+        { en: "Please open the window.", jp: "窓を開けてください。", grammar: "Please + 動詞の原形 で丁寧な命令文（お願い）を作ります。" }
+      ],
+      2: [
+        { en: "I will visit my grandmother tomorrow.", jp: "私は明日祖母を訪ねるつもりです。", grammar: "will + 動詞の原形で未来の予定・意志を表します。tomorrow は「明日」。" },
+        { en: "She is taller than her brother.", jp: "彼女は兄（弟）より背が高いです。", grammar: "taller than ～ は比較級の表現です。形容詞に -er をつけて「～より…」を表します。" },
+        { en: "I have to finish my homework.", jp: "私は宿題を終わらせなければなりません。", grammar: "have to + 動詞の原形で「～しなければならない」という義務を表します。" },
+        { en: "What time does the bus come?", jp: "バスは何時に来ますか？", grammar: "What time ～? は「何時に～？」と時刻をたずねる表現です。" },
+        { en: "I enjoyed playing soccer.", jp: "私はサッカーをして楽しみました。", grammar: "enjoy + ～ing で「～して楽しむ」。enjoy の後は動名詞を使います。" }
+      ],
+      3: [
+        { en: "The movie was very exciting.", jp: "その映画はとてもワクワクしました。", grammar: "exciting は「（物事が）ワクワクさせる」という意味の形容詞です。感情を引き起こすものに使います。" },
+        { en: "Could you tell me the way?", jp: "道を教えていただけますか？", grammar: "Could you ～? は丁寧なお願いの表現です。Can you より礼儀正しい言い方です。" },
+        { en: "I have lived here for three years.", jp: "私はここに3年間住んでいます。", grammar: "have lived は現在完了形の継続用法です。for + 期間 で「～間」を表します。" },
+        { en: "He is the tallest in our class.", jp: "彼は私たちのクラスで一番背が高いです。", grammar: "the tallest は最上級です。「～の中で一番…」は in + 場所/グループ で表します。" },
+        { en: "If it rains, I will stay home.", jp: "もし雨が降ったら、家にいます。", grammar: "If + 現在形, will + 動詞の原形 は条件を表す文です。if節では未来のことも現在形を使います。" }
+      ],
+      4: [
+        { en: "I was watching TV when she called.", jp: "彼女が電話した時、私はテレビを見ていました。", grammar: "過去進行形(was watching)と過去形(called)の組み合わせです。「～していた時に…した」の表現です。" },
+        { en: "This book is more interesting than that one.", jp: "この本はあの本より面白いです。", grammar: "more interesting than ～ は長い形容詞の比較級です。-er ではなく more を前に置きます。" },
+        { en: "You should drink more water.", jp: "もっと水を飲んだ方がいいですよ。", grammar: "should + 動詞の原形で「～した方がいい」というアドバイスを表します。" },
+        { en: "I don't know what to do.", jp: "私は何をすべきかわかりません。", grammar: "what to do は「何をすべきか」。疑問詞 + to + 動詞の原形の形です。" },
+        { en: "The cake made by my mother is delicious.", jp: "母が作ったケーキはおいしいです。", grammar: "made by ～ は過去分詞による後置修飾です。「～によって作られた」の意味です。" }
+      ],
+      5: [
+        { en: "Have you ever been to America?", jp: "アメリカに行ったことはありますか？", grammar: "Have you ever ～? は「今までに～したことがありますか？」という経験を問う現在完了形です。" },
+        { en: "I wish I could fly like a bird.", jp: "鳥のように飛べたらいいのに。", grammar: "I wish I could ～ は「～できたらいいのに」という現在の願望を表す仮定法です。" },
+        { en: "She asked me to help her.", jp: "彼女は私に手伝ってほしいと頼みました。", grammar: "ask + 人 + to + 動詞の原形で「人に～するよう頼む」という表現です。" },
+        { en: "It is important to study every day.", jp: "毎日勉強することは大切です。", grammar: "It is + 形容詞 + to + 動詞の原形 は「～することは…だ」という形式主語構文です。" },
+        { en: "The dog which is sleeping is mine.", jp: "眠っている犬は私のです。", grammar: "which is sleeping は関係代名詞 which を使った形容詞節で、犬を修飾しています。" }
+      ]
+    }
+  },
+  "3": {
+    name: "英検3級",
+    levels: {
+      1: [
+        { en: "I have just finished my lunch.", jp: "私はちょうど昼食を終えたところです。", grammar: "have just + 過去分詞は「ちょうど～したところだ」という完了を表す現在完了形です。" },
+        { en: "She has been busy since this morning.", jp: "彼女は今朝からずっと忙しいです。", grammar: "has been + 形容詞 + since ～ は「～からずっと…だ」という継続を表す現在完了形です。" },
+        { en: "I want you to come to my party.", jp: "私のパーティーに来てほしいです。", grammar: "want + 人 + to + 動詞の原形で「人に～してほしい」という表現です。" },
+        { en: "The book written by him is popular.", jp: "彼によって書かれた本は人気です。", grammar: "written by ～ は過去分詞の後置修飾で「～によって書かれた」の意味です。" },
+        { en: "I don't know where he lives.", jp: "私は彼がどこに住んでいるか知りません。", grammar: "where he lives は間接疑問文です。疑問詞の後は「主語 + 動詞」の語順になります。" }
+      ],
+      2: [
+        { en: "If I were you, I would study harder.", jp: "もし私があなたなら、もっと一生懸命勉強するのに。", grammar: "If I were ～, I would ... は仮定法過去です。現実とは異なる仮定を表します。" },
+        { en: "He told me that he was sick.", jp: "彼は具合が悪いと私に言いました。", grammar: "told me that ～ は間接話法です。主節が過去形なので that 節内も過去形になります（時制の一致）。" },
+        { en: "This is the place where I was born.", jp: "ここは私が生まれた場所です。", grammar: "where I was born は関係副詞 where を使った形容詞節です。場所を先行詞とします。" },
+        { en: "I am looking forward to seeing you.", jp: "あなたに会えるのを楽しみにしています。", grammar: "look forward to ～ing は「～を楽しみにする」。to の後は動名詞になることに注意です。" },
+        { en: "The car was repaired by the mechanic.", jp: "その車は整備士によって修理されました。", grammar: "was repaired は受動態（be動詞 + 過去分詞）です。by ～ で動作の主体を表します。" }
+      ],
+      3: [
+        { en: "I have never seen such a beautiful sunset.", jp: "こんなに美しい夕日を見たことがありません。", grammar: "have never + 過去分詞は経験の否定「一度も～したことがない」。such a ～ は「こんなに～な」。" },
+        { en: "She is so kind that everyone likes her.", jp: "彼女はとても優しいのでみんな好きです。", grammar: "so ～ that ... は「とても～なので…」という結果を表す構文です。" },
+        { en: "Not only he but also she can speak French.", jp: "彼だけでなく彼女もフランス語を話せます。", grammar: "not only A but also B は「AだけでなくBも」という表現です。" },
+        { en: "I would like to make a reservation.", jp: "予約をしたいのですが。", grammar: "would like to ～ は want to の丁寧な表現で「～したいのですが」の意味です。" },
+        { en: "How long have you been waiting here?", jp: "ここでどのくらい待っていますか？", grammar: "How long have you been ～ing? は現在完了進行形で「どのくらい～し続けていますか」です。" }
+      ],
+      4: [
+        { en: "The reason why he left is unknown.", jp: "彼が去った理由は分かりません。", grammar: "the reason why ～ は「～する理由」。why は関係副詞で reason を修飾します。" },
+        { en: "I had already eaten when she arrived.", jp: "彼女が着いた時、私はもう食べ終えていました。", grammar: "had already eaten は過去完了形で、過去のある時点より前に完了していたことを表します。" },
+        { en: "He speaks as if he knew everything.", jp: "彼はまるで全てを知っているかのように話します。", grammar: "as if + 仮定法過去で「まるで～であるかのように」。実際とは違うことを表します。" },
+        { en: "It has been raining since yesterday.", jp: "昨日からずっと雨が降り続けています。", grammar: "has been raining は現在完了進行形で「ずっと～し続けている」という継続を表します。" },
+        { en: "I am used to getting up early.", jp: "私は早起きに慣れています。", grammar: "be used to ～ing は「～することに慣れている」。to の後は動名詞が来ることに注意です。" }
+      ],
+      5: [
+        { en: "No matter how hard I try, I cannot solve it.", jp: "どんなに頑張っても、解けません。", grammar: "No matter how ～ は「どんなに～しても」という譲歩の表現です。however と同じ意味です。" },
+        { en: "The teacher made us clean the classroom.", jp: "先生は私たちに教室を掃除させました。", grammar: "make + 人 + 動詞の原形は使役動詞で「人に～させる」という意味です。" },
+        { en: "I wish I had studied harder in school.", jp: "学校でもっと勉強していればよかったのに。", grammar: "I wish I had + 過去分詞は仮定法過去完了で、過去の後悔を表します。" },
+        { en: "The more you practice, the better you become.", jp: "練習すればするほど、うまくなります。", grammar: "The + 比較級 ～, the + 比較級 ... は「～すればするほど…」の構文です。" },
+        { en: "She must have been very surprised.", jp: "彼女はとても驚いたに違いありません。", grammar: "must have + 過去分詞は「～したに違いない」。過去の事柄に対する強い推量です。" }
+      ]
+    }
+  },
+  "pre2": {
+    name: "英検準2級",
+    levels: {
+      1: [
+        { en: "I would rather stay home than go out.", jp: "外出するよりも家にいたいです。", grammar: "would rather A than B は「BよりもAしたい」という好みの表現です。" },
+        { en: "The meeting is supposed to start at three.", jp: "会議は3時に始まることになっています。", grammar: "be supposed to ～ は「～することになっている」という予定・期待を表します。" },
+        { en: "It is worth visiting that museum.", jp: "その美術館は訪れる価値があります。", grammar: "It is worth ～ing は「～する価値がある」。worth の後は動名詞を使います。" },
+        { en: "She seems to be interested in science.", jp: "彼女は科学に興味があるようです。", grammar: "seem to be ～ は「～のようだ」。be interested in で「～に興味がある」。" },
+        { en: "I have no idea what he is talking about.", jp: "彼が何について話しているのか見当もつきません。", grammar: "have no idea は「全く分からない」。what 以下は間接疑問文です。" }
+      ],
+      2: [
+        { en: "Had I known the truth, I would have told you.", jp: "真実を知っていたら、あなたに伝えていたでしょう。", grammar: "Had I known ～ は倒置の仮定法過去完了です。If I had known と同じ意味です。" },
+        { en: "Not until he left did I realize his importance.", jp: "彼が去って初めて、彼の重要さに気づきました。", grammar: "Not until ～ did ... は倒置構文で「～して初めて…した」の強調表現です。" },
+        { en: "She insisted that he attend the meeting.", jp: "彼女は彼がその会議に出席するよう主張しました。", grammar: "insist that + 主語 + 動詞の原形は仮定法現在（要求・主張の that 節）です。" },
+        { en: "The news that he passed the exam made us happy.", jp: "彼が試験に受かったという知らせは私たちを喜ばせました。", grammar: "The news that ～ は同格の that 節です。news の具体的内容を説明しています。" },
+        { en: "I cannot help but admire her courage.", jp: "彼女の勇気に感心せずにはいられません。", grammar: "cannot help but + 動詞の原形は「～せずにはいられない」。cannot help ～ing と同じ意味です。" }
+      ],
+      3: [
+        { en: "It goes without saying that health is important.", jp: "健康が大切なのは言うまでもありません。", grammar: "It goes without saying that ～ は「～は言うまでもない」という慣用表現です。" },
+        { en: "There is no point in worrying about it.", jp: "それについて心配しても仕方がありません。", grammar: "There is no point in ～ing は「～しても意味がない」という表現です。" },
+        { en: "I am afraid that I cannot come tomorrow.", jp: "残念ですが明日は来られません。", grammar: "I am afraid that ～ は「残念ながら～です」と悪い知らせを伝える丁寧な表現です。" },
+        { en: "She takes after her mother in many ways.", jp: "彼女は多くの点で母親に似ています。", grammar: "take after ～ は「～に似ている」という句動詞です。性格や外見が似ている場合に使います。" },
+        { en: "You had better not eat too much before bed.", jp: "寝る前に食べ過ぎない方がいいですよ。", grammar: "had better not + 動詞の原形は「～しない方がいい」という忠告の表現です。" }
+      ],
+      4: [
+        { en: "By the time we arrived, the concert had already started.", jp: "私たちが着いた時には、コンサートはすでに始まっていました。", grammar: "By the time + 過去形, 過去完了形は「～した時にはすでに…していた」という時の前後関係を表します。" },
+        { en: "Were it not for your help, I would fail.", jp: "あなたの助けがなければ、失敗するでしょう。", grammar: "Were it not for ～ は仮定法の倒置で「～がなければ」。If it were not for と同意です。" },
+        { en: "Whatever happens, I will support you.", jp: "何が起きようとも、私はあなたを応援します。", grammar: "Whatever + 動詞は「何が～しようとも」という譲歩の表現です。No matter what と同じです。" },
+        { en: "The fact remains that we need more time.", jp: "もっと時間が必要だという事実は変わりません。", grammar: "The fact remains that ～ は「～という事実は変わらない」。that 節が fact と同格です。" },
+        { en: "He is anything but a fool.", jp: "彼は決して愚か者ではありません。", grammar: "anything but ～ は「決して～ではない」という強い否定表現です。" }
+      ],
+      5: [
+        { en: "It is not until you lose health that you realize its value.", jp: "健康を失って初めてその価値に気づく。", grammar: "It is not until ～ that ... は「～して初めて…する」という強調構文です。" },
+        { en: "To tell the truth, I have never liked him.", jp: "実を言うと、彼のことは好きだったことがありません。", grammar: "To tell the truth は「実を言うと」という独立不定詞（慣用的な副詞句）です。" },
+        { en: "She is the last person to tell a lie.", jp: "彼女は最も嘘をつきそうにない人です。", grammar: "the last person to ～ は「最も～しそうにない人」という意味の慣用表現です。" },
+        { en: "All you have to do is press this button.", jp: "このボタンを押しさえすればいいのです。", grammar: "All you have to do is + 動詞の原形は「～しさえすればよい」という表現です。" },
+        { en: "It is high time we took action on this problem.", jp: "この問題に対して行動を起こすべき時です。", grammar: "It is high time + 仮定法過去は「もう～すべき時だ」という表現です。" }
+      ]
+    }
+  },
+  "2": {
+    name: "英検2級",
+    levels: {
+      1: [
+        { en: "I would appreciate it if you could reply soon.", jp: "早めにご返信いただけるとありがたいです。", grammar: "I would appreciate it if ～ は非常に丁寧な依頼表現です。ビジネスでよく使われます。" },
+        { en: "The research suggests that exercise improves memory.", jp: "その研究は運動が記憶力を改善することを示唆しています。", grammar: "suggest that ～ は「～を示唆する」。学術的な文脈で頻出の表現です。" },
+        { en: "It is essential that everyone participate in the discussion.", jp: "全員がその議論に参加することが不可欠です。", grammar: "It is essential that + 主語 + 動詞の原形は仮定法現在で、必要性を表します。" },
+        { en: "The number of tourists has been increasing every year.", jp: "観光客の数は毎年増加し続けています。", grammar: "has been increasing は現在完了進行形で、過去から現在まで続く変化を表します。" },
+        { en: "She is known to be an excellent researcher.", jp: "彼女は優れた研究者として知られています。", grammar: "be known to be ～ は「～として知られている」という表現です。" }
+      ],
+      2: [
+        { en: "Hardly had he arrived when the meeting began.", jp: "彼が着くや否や、会議が始まりました。", grammar: "Hardly had + 主語 + 過去分詞 when ～ は「～するや否や」。否定語が文頭で倒置が起きます。" },
+        { en: "The government should have taken measures earlier.", jp: "政府はもっと早く対策を講じるべきでした。", grammar: "should have + 過去分詞は「～すべきだった（のにしなかった）」という過去の後悔・非難です。" },
+        { en: "Were I in your position, I would accept the offer.", jp: "もし私があなたの立場なら、そのオファーを受けるでしょう。", grammar: "Were I ～ は仮定法過去の倒置形です。If I were と同じ意味で、フォーマルな表現です。" },
+        { en: "The issue is too complicated to be solved easily.", jp: "その問題は簡単に解決するには複雑すぎます。", grammar: "too ～ to ... は「…するには～すぎる」。受動態の不定詞(to be solved)と組み合わさっています。" },
+        { en: "It remains to be seen whether the plan will succeed.", jp: "その計画が成功するかどうかは、まだ分かりません。", grammar: "It remains to be seen whether ～ は「～かどうかはまだ分からない」という表現です。" }
+      ],
+      3: [
+        { en: "Never before have I seen such a magnificent view.", jp: "こんなに壮大な景色は今まで見たことがありません。", grammar: "Never before have I ～ は否定語の倒置で強調を表します。「今までに一度も～ない」。" },
+        { en: "So impressed was she that she was speechless.", jp: "彼女はとても感動して言葉が出なかった。", grammar: "So + 形容詞 + was + 主語 that ～ は倒置による強調構文です。" },
+        { en: "The proposal is likely to be approved by the committee.", jp: "その提案は委員会によって承認される可能性が高いです。", grammar: "be likely to ～ は「～する可能性が高い」。受動態と組み合わせて使っています。" },
+        { en: "Only after careful consideration did they make a decision.", jp: "慎重に検討した後に初めて、彼らは決定を下しました。", grammar: "Only after ～ did ... は「～した後に初めて…した」。Only が文頭で倒置が起きます。" },
+        { en: "We need to take into account the environmental impact.", jp: "環境への影響を考慮に入れる必要があります。", grammar: "take into account ～ は「～を考慮に入れる」という重要な熟語です。" }
+      ],
+      4: [
+        { en: "On no account should you disclose this information.", jp: "決してこの情報を漏らしてはいけません。", grammar: "On no account should ～ は「決して～してはならない」。否定語が文頭で倒置が起きます。" },
+        { en: "The technology has made it possible to work from anywhere.", jp: "テクノロジーによりどこからでも働けるようになりました。", grammar: "make it possible to ～ は「～することを可能にする」。it は形式目的語です。" },
+        { en: "Provided that you finish on time, you may leave early.", jp: "時間通りに終わるなら、早退してもいいですよ。", grammar: "Provided that ～ は「～という条件で」。if と似た接続詞です。" },
+        { en: "What matters most is how we deal with the problem.", jp: "最も重要なのは、その問題にどう対処するかです。", grammar: "What matters most は関係代名詞 what を使った主語節。how 以下は間接疑問文です。" },
+        { en: "Not a single word did he say during the meeting.", jp: "会議中、彼は一言も発しませんでした。", grammar: "Not a single ～ did ... は否定の強調倒置です。「一つの～も…しなかった」。" }
+      ],
+      5: [
+        { en: "Had it not been for the scholarship, I could not have studied abroad.", jp: "奨学金がなかったら、留学できなかったでしょう。", grammar: "Had it not been for ～ は仮定法過去完了の倒置形で「～がなかったら」です。" },
+        { en: "Little did I know that my life was about to change.", jp: "人生が変わろうとしていることを、私はほとんど知りませんでした。", grammar: "Little did I know that ～ は否定副詞 little の倒置で「ほとんど知らなかった」の意味です。" },
+        { en: "It is no exaggeration to say that the Internet has changed our lives.", jp: "インターネットが私たちの生活を変えたと言っても過言ではありません。", grammar: "It is no exaggeration to say that ～ は「～と言っても過言ではない」という表現です。" },
+        { en: "The experience enabled me to see things from a different perspective.", jp: "その経験のおかげで物事を違う視点から見ることができました。", grammar: "enable + 人 + to ～ は「人が～することを可能にする」。perspective は「視点」。" },
+        { en: "In no way does this imply that the project has been abandoned.", jp: "これは決してそのプロジェクトが放棄されたことを意味しません。", grammar: "In no way does ～ は否定の強調倒置で「決して～ではない」の意味です。" }
+      ]
+    }
+  }
+};
+
+// ============================================================
+// Game State
+// ============================================================
+let state = {
+  grade: null,
+  level: null,
+  questions: [],
+  currentQ: 0,
+  totalQ: 5,
+  score: 0,
+  results: [],  // per-question results: {correct: bool}
+  timer: null,
+  timeLeft: 30,
+  isRecording: false,
+  recognition: null,
+  answered: false
+};
+
+// ============================================================
+// DOM Elements
+// ============================================================
+const $ = id => document.getElementById(id);
+const screenSelect = $('screen-select');
+const screenGame   = $('screen-game');
+const screenResult = $('screen-result');
+const screenScore  = $('screen-score');
+const gradeSelect  = $('grade-select');
+const levelSelect  = $('level-select');
+const bombOverlay  = $('bomb-overlay');
+const explosionOverlay = $('explosion-overlay');
+
+// ============================================================
+// Screen Management
+// ============================================================
+function showScreen(screen) {
+  [screenSelect, screenGame, screenResult, screenScore].forEach(s => s.classList.add('hidden'));
+  screen.classList.remove('hidden');
+  explosionOverlay.classList.add('hidden');
+  bombOverlay.classList.add('hidden');
+}
+
+// ============================================================
+// Course Selection
+// ============================================================
+function selectGrade(grade) {
+  state.grade = grade;
+  gradeSelect.classList.add('hidden');
+  levelSelect.classList.remove('hidden');
+  $('level-title').textContent = QUESTIONS[grade].name + ' — レベルを選んでね';
+}
+
+function backToGrades() {
+  gradeSelect.classList.remove('hidden');
+  levelSelect.classList.add('hidden');
+}
+
+function selectLevel(level) {
+  state.level = level;
+  state.questions = [...QUESTIONS[state.grade].levels[level]];
+  state.currentQ = 0;
+  state.score = 0;
+  state.results = [];
+  $('game-badge').textContent = QUESTIONS[state.grade].name + ' Lv.' + level;
+  showScreen(screenGame);
+  buildProgressDots();
+  startQuestion();
+}
+
+function goHome() {
+  stopTimer();
+  stopRecognition();
+  showScreen(screenSelect);
+  gradeSelect.classList.remove('hidden');
+  levelSelect.classList.add('hidden');
+}
+
+function retryLevel() {
+  selectLevel(state.level);
+}
+
+// ============================================================
+// Progress Dots
+// ============================================================
+function buildProgressDots() {
+  const wrap = $('progress-dots');
+  wrap.innerHTML = '';
+  for (let i = 0; i < state.questions.length; i++) {
+    const dot = document.createElement('span');
+    dot.className = 'progress-dot' + (i === 0 ? ' current' : '');
+    wrap.appendChild(dot);
+  }
+}
+
+function updateProgressDots() {
+  const dots = $('progress-dots').children;
+  for (let i = 0; i < dots.length; i++) {
+    dots[i].className = 'progress-dot';
+    if (i < state.results.length) {
+      dots[i].className += state.results[i].correct ? ' done-correct' : ' done-wrong';
+    } else if (i === state.currentQ) {
+      dots[i].className += ' current';
+    }
+  }
+}
+
+// ============================================================
+// Question Logic
+// ============================================================
+function startQuestion() {
+  state.answered = false;
+  state.timeLeft = 30;
+  const q = state.questions[state.currentQ];
+
+  $('q-counter').textContent = (state.currentQ + 1) + ' / ' + state.questions.length;
+  $('question-jp').textContent = '💬 ' + q.jp;
+  updateProgressDots();
+
+  // Scramble words
+  const words = q.en.replace(/[.!?,]/g, '').split(/\s+/);
+  const shuffled = shuffleArray([...words]);
+  const tiles = $('word-tiles');
+  tiles.innerHTML = '';
+  shuffled.forEach((w, i) => {
+    const tile = document.createElement('span');
+    tile.className = 'word-tile';
+    tile.style.animationDelay = (i * 0.08) + 's';
+    tile.textContent = w;
+    tiles.appendChild(tile);
+  });
+
+  $('recognized-text').textContent = 'ここに認識結果が表示されます';
+  $('recognized-text').className = 'recognized-text';
+  $('mic-label').textContent = 'タップして話す';
+
+  bombOverlay.classList.add('hidden');
+  explosionOverlay.classList.add('hidden');
+
+  updateTimerDisplay();
+  startTimer();
+}
+
+function shuffleArray(arr) {
+  // Fisher-Yates shuffle, but ensure it's not the same as original
+  const original = arr.join(' ');
+  let shuffled;
+  let attempts = 0;
+  do {
+    shuffled = [...arr];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    attempts++;
+  } while (shuffled.join(' ') === original && attempts < 20);
+  return shuffled;
+}
+
+// ============================================================
+// Timer
+// ============================================================
+function startTimer() {
+  stopTimer();
+  state.timer = setInterval(() => {
+    state.timeLeft--;
+    updateTimerDisplay();
+
+    if (state.timeLeft <= 10 && state.timeLeft > 0) {
+      bombOverlay.classList.remove('hidden');
+      $('bomb-timer').textContent = state.timeLeft;
+    }
+
+    if (state.timeLeft <= 0) {
+      timeUp();
+    }
+  }, 1000);
+}
+
+function stopTimer() {
+  if (state.timer) {
+    clearInterval(state.timer);
+    state.timer = null;
+  }
+}
+
+function updateTimerDisplay() {
+  const bar = $('timer-bar');
+  const txt = $('timer-text');
+  const pct = (state.timeLeft / 30) * 100;
+  bar.style.width = pct + '%';
+
+  bar.className = 'timer-bar';
+  txt.className = 'timer-text';
+  if (state.timeLeft <= 5) {
+    bar.classList.add('danger');
+    txt.classList.add('danger-text');
+  } else if (state.timeLeft <= 10) {
+    bar.classList.add('warn');
+  }
+
+  txt.textContent = state.timeLeft;
+}
+
+function timeUp() {
+  stopTimer();
+  stopRecognition();
+  state.answered = true;
+
+  // Show explosion
+  explosionOverlay.classList.remove('hidden');
+  bombOverlay.classList.add('hidden');
+
+  state.results.push({ correct: false });
+
+  setTimeout(() => {
+    showResultScreen(false);
+  }, 2000);
+}
+
+// ============================================================
+// Speech Recognition (Web Speech API)
+// ============================================================
+function initRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    alert('このブラウザは音声認識に対応していません。Google Chrome をお使いください。');
+    return null;
+  }
+  const rec = new SpeechRecognition();
+  rec.lang = 'en-US';
+  rec.interimResults = true;
+  rec.continuous = false;
+  rec.maxAlternatives = 3;
+
+  rec.onresult = (event) => {
+    let interim = '';
+    let final = '';
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      if (event.results[i].isFinal) {
+        final += event.results[i][0].transcript;
+      } else {
+        interim += event.results[i][0].transcript;
+      }
+    }
+    const text = final || interim;
+    $('recognized-text').textContent = text || '...聞き取り中...';
+
+    if (final && !state.answered) {
+      checkAnswer(final);
+    }
+  };
+
+  rec.onerror = (event) => {
+    console.log('Speech error:', event.error);
+    if (event.error === 'no-speech') {
+      $('mic-label').textContent = '音声が検出されませんでした。もう一度タップ。';
+    }
+    state.isRecording = false;
+    $('mic-btn').classList.remove('recording');
+    $('mic-label').textContent = 'タップして話す';
+  };
+
+  rec.onend = () => {
+    if (state.isRecording && !state.answered) {
+      // Restart if user hasn't answered yet
+      try { rec.start(); } catch(e) {}
+    } else {
+      state.isRecording = false;
+      $('mic-btn').classList.remove('recording');
+      $('mic-label').textContent = 'タップして話す';
+    }
+  };
+
+  return rec;
+}
+
+function toggleRecognition() {
+  if (state.answered) return;
+  if (state.isRecording) {
+    stopRecognition();
+  } else {
+    startRecognition();
+  }
+}
+
+function startRecognition() {
+  if (!state.recognition) {
+    state.recognition = initRecognition();
+  }
+  if (!state.recognition) return;
+  try {
+    state.recognition.start();
+    state.isRecording = true;
+    $('mic-btn').classList.add('recording');
+    $('mic-label').textContent = '🔴 聞き取り中...タップで停止';
+  } catch(e) {
+    console.log('Recognition start error:', e);
+  }
+}
+
+function stopRecognition() {
+  if (state.recognition) {
+    state.isRecording = false;
+    try { state.recognition.stop(); } catch(e) {}
+    $('mic-btn').classList.remove('recording');
+    $('mic-label').textContent = 'タップして話す';
+  }
+}
+
+// ============================================================
+// Answer Checking
+// ============================================================
+function normalizeText(text) {
+  return text
+    .toLowerCase()
+    .replace(/['']/g, "'")
+    .replace(/[.,!?;:"""]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function checkAnswer(spoken) {
+  if (state.answered) return;
+  const q = state.questions[state.currentQ];
+  const expected = normalizeText(q.en);
+  const got = normalizeText(spoken);
+
+  // Also check against alternatives without contractions
+  const expandContractions = t => t
+    .replace(/don't/g, 'do not')
+    .replace(/doesn't/g, 'does not')
+    .replace(/didn't/g, 'did not')
+    .replace(/can't/g, 'cannot')
+    .replace(/won't/g, 'will not')
+    .replace(/shouldn't/g, 'should not')
+    .replace(/couldn't/g, 'could not')
+    .replace(/wouldn't/g, 'would not')
+    .replace(/isn't/g, 'is not')
+    .replace(/aren't/g, 'are not')
+    .replace(/wasn't/g, 'was not')
+    .replace(/weren't/g, 'were not')
+    .replace(/haven't/g, 'have not')
+    .replace(/hasn't/g, 'has not')
+    .replace(/hadn't/g, 'had not')
+    .replace(/i'm/g, 'i am')
+    .replace(/he's/g, 'he is')
+    .replace(/she's/g, 'she is')
+    .replace(/it's/g, 'it is')
+    .replace(/we're/g, 'we are')
+    .replace(/they're/g, 'they are')
+    .replace(/you're/g, 'you are')
+    .replace(/i've/g, 'i have')
+    .replace(/we've/g, 'we have')
+    .replace(/they've/g, 'they have')
+    .replace(/i'll/g, 'i will')
+    .replace(/he'll/g, 'he will')
+    .replace(/she'll/g, 'she will')
+    .replace(/we'll/g, 'we will')
+    .replace(/they'll/g, 'they will')
+    .replace(/i'd/g, 'i would')
+    .replace(/he'd/g, 'he would')
+    .replace(/she'd/g, 'she would')
+    .replace(/we'd/g, 'we would')
+    .replace(/they'd/g, 'they would');
+
+  const isCorrect = (got === expected)
+    || (expandContractions(got) === expandContractions(expected))
+    || (got === expandContractions(expected))
+    || (expandContractions(got) === expected);
+
+  if (isCorrect) {
+    state.answered = true;
+    stopTimer();
+    stopRecognition();
+    state.score++;
+    state.results.push({ correct: true });
+
+    $('recognized-text').textContent = spoken;
+    $('recognized-text').classList.add('correct');
+
+    setTimeout(() => showResultScreen(true), 800);
+  } else {
+    // Show interim text but keep listening
+    $('recognized-text').textContent = spoken;
+    // Flash wrong briefly
+    $('recognized-text').classList.add('wrong');
+    setTimeout(() => $('recognized-text').classList.remove('wrong'), 600);
+  }
+}
+
+// ============================================================
+// Result Screen
+// ============================================================
+function showResultScreen(correct) {
+  const q = state.questions[state.currentQ];
+  showScreen(screenResult);
+
+  $('result-icon').textContent = correct ? '⭕' : '❌';
+  $('result-title').textContent = correct ? '正解！すごい！' : '残念...不正解';
+  $('result-title').className = 'result-title ' + (correct ? 'correct-title' : 'wrong-title');
+  $('result-en').textContent = q.en;
+  $('result-jp').textContent = q.jp;
+  $('result-grammar').textContent = q.grammar;
+
+  // Next button label
+  if (state.currentQ + 1 >= state.questions.length) {
+    $('next-btn').textContent = '結果を見る 🏆';
+  } else {
+    $('next-btn').textContent = '次の問題へ →';
+  }
+}
+
+function nextQuestion() {
+  state.currentQ++;
+  if (state.currentQ >= state.questions.length) {
+    showFinalScore();
+  } else {
+    showScreen(screenGame);
+    startQuestion();
+  }
+}
+
+// ============================================================
+// Final Score Screen
+// ============================================================
+function showFinalScore() {
+  showScreen(screenScore);
+  $('score-grade-label').textContent = QUESTIONS[state.grade].name + ' Lv.' + state.level + ' 結果';
+  $('score-big').textContent = state.score + ' / ' + state.questions.length;
+
+  let msg = '';
+  const pct = state.score / state.questions.length;
+  if (pct === 1) msg = '🎉 パーフェクト！素晴らしい！';
+  else if (pct >= 0.8) msg = '👏 とても良くできました！';
+  else if (pct >= 0.6) msg = '😊 まずまずの結果です！';
+  else if (pct >= 0.4) msg = '💪 もう少し頑張ろう！';
+  else msg = '📚 練習を続けましょう！';
+  $('score-detail').textContent = msg;
+
+  // Build final dots
+  const wrap = $('final-dots');
+  wrap.innerHTML = '';
+  state.results.forEach(r => {
+    const dot = document.createElement('span');
+    dot.className = 'progress-dot ' + (r.correct ? 'done-correct' : 'done-wrong');
+    wrap.appendChild(dot);
+  });
+}
+
+// ============================================================
+// Text-to-Speech
+// ============================================================
+function speakAnswer() {
+  const q = state.questions[state.currentQ];
+  if (!q) return;
+  const synth = window.speechSynthesis;
+  synth.cancel();
+  const utter = new SpeechSynthesisUtterance(q.en);
+  utter.lang = 'en-US';
+  utter.rate = 0.9;
+  synth.speak(utter);
+}
+
+// ============================================================
+// Initialize
+// ============================================================
+showScreen(screenSelect);
+</script>
+</body>
+</html>
