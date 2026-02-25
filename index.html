@@ -131,6 +131,46 @@ body{font-family:'Segoe UI','Hiragino Sans','Meiryo',sans-serif;background:#f0f4
 .score-big{font-size:3rem;font-weight:900;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .score-detail{margin-top:10px;font-size:.95rem;color:#718096}
 
+/* ===== Game home button ===== */
+.game-home-btn{position:absolute;top:0;right:0;padding:8px 14px;border:2px solid #cbd5e0;border-radius:10px;background:#fff;color:#718096;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .15s;z-index:10}
+.game-home-btn:hover{background:#667eea;color:#fff;border-color:#667eea}
+
+/* ===== Points display in game ===== */
+.points-display{font-size:.85rem;color:#d69e2e;font-weight:700}
+.point-popup{position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);font-size:2rem;font-weight:900;color:#d69e2e;pointer-events:none;z-index:160;animation:point-pop .8s ease forwards;text-shadow:0 2px 8px rgba(214,158,46,.4)}
+@keyframes point-pop{0%{opacity:1;transform:translate(-50%,-50%) scale(.5)}30%{transform:translate(-50%,-70%) scale(1.2)}100%{opacity:0;transform:translate(-50%,-120%) scale(1)}}
+
+/* ===== Result points badge ===== */
+.result-points{display:inline-block;margin-bottom:16px;padding:8px 20px;background:linear-gradient(135deg,#f6d365,#fda085);color:#fff;border-radius:20px;font-size:1.1rem;font-weight:700}
+.result-speed{font-size:.85rem;color:#d69e2e;margin-bottom:4px}
+
+/* ===== Final score points ===== */
+.score-points{font-size:2rem;font-weight:900;color:#d69e2e;margin-top:8px}
+.score-breakdown{margin-top:12px;text-align:left}
+.score-breakdown-item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:.85rem;color:#4a5568}
+.score-breakdown-item .q-label{font-weight:600}
+.score-breakdown-item .q-points{font-weight:700;color:#d69e2e}
+.score-breakdown-item .q-wrong{color:#e53e3e}
+
+/* ===== Play Log Screen ===== */
+#screen-log{padding-top:30px}
+.log-header{text-align:center;margin-bottom:20px}
+.log-header h2{font-size:1.3rem;color:#4a5568;margin-bottom:4px}
+.log-header p{font-size:.85rem;color:#a0aec0}
+.log-date-group{margin-bottom:20px}
+.log-date-label{font-size:.9rem;font-weight:700;color:#667eea;margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid #667eea}
+.log-entry{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#fff;border-radius:10px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,.05);font-size:.85rem}
+.log-entry .log-grade{font-weight:700;color:#2d3748}
+.log-entry .log-result{display:flex;gap:12px;align-items:center}
+.log-entry .log-accuracy{color:#38a169;font-weight:600}
+.log-entry .log-points{color:#d69e2e;font-weight:700}
+.log-entry .log-time{color:#a0aec0;font-size:.75rem}
+.log-empty{text-align:center;padding:40px 20px;color:#a0aec0;font-size:.95rem}
+.log-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border:2px solid #667eea;border-radius:10px;background:#fff;color:#667eea;font-size:.9rem;font-weight:600;cursor:pointer;transition:all .15s;margin-top:8px}
+.log-btn:hover{background:#667eea;color:#fff}
+.log-btn.danger{border-color:#e53e3e;color:#e53e3e}
+.log-btn.danger:hover{background:#e53e3e;color:#fff}
+
 /* ===== Tap Answer Area ===== */
 .tap-answer-area{margin-bottom:20px}
 .answer-label{font-size:.85rem;color:#888;margin-bottom:8px}
@@ -180,6 +220,9 @@ body{font-family:'Segoe UI','Hiragino Sans','Meiryo',sans-serif;background:#f0f4
 <div id="screen-select" class="container">
   <div id="grade-select">
     <h2>級を選んでね</h2>
+    <div style="text-align:center;margin-bottom:16px">
+      <button class="log-btn" onclick="showLog()">📋 今日の学習ログ</button>
+    </div>
     <div class="grade-grid">
       <button class="grade-btn grade-5" onclick="selectGrade('5')">英検5級</button>
       <button class="grade-btn grade-4" onclick="selectGrade('4')">英検4級</button>
@@ -203,8 +246,10 @@ body{font-family:'Segoe UI','Hiragino Sans','Meiryo',sans-serif;background:#f0f4
 
 <!-- Screen: Game -->
 <div id="screen-game" class="container hidden">
+  <button class="game-home-btn" onclick="confirmGoHome()">🏠 ホーム</button>
   <div class="game-info">
     <span class="badge" id="game-badge">英検5級 Lv.1</span>
+    <span class="points-display" id="game-points">⭐ 0 pt</span>
     <span id="q-counter">1 / 5</span>
   </div>
   <div class="progress-wrap">
@@ -249,6 +294,8 @@ body{font-family:'Segoe UI','Hiragino Sans','Meiryo',sans-serif;background:#f0f4
 <div id="screen-result" class="container hidden">
   <div class="result-icon" id="result-icon">⭕</div>
   <div class="result-title" id="result-title">正解！すごい！</div>
+  <div class="result-speed" id="result-speed"></div>
+  <div class="result-points" id="result-points">+100 pt</div>
   <div class="result-card">
     <h4>正解の英文</h4>
     <div class="answer-en" id="result-en">I play tennis every day.</div>
@@ -270,7 +317,9 @@ body{font-family:'Segoe UI','Hiragino Sans','Meiryo',sans-serif;background:#f0f4
   <div class="score-summary">
     <h3 id="score-grade-label">英検5級 Lv.1 結果</h3>
     <div class="score-big" id="score-big">0 / 5</div>
+    <div class="score-points" id="score-total-points">⭐ 0 pt</div>
     <div class="score-detail" id="score-detail"></div>
+    <div class="score-breakdown" id="score-breakdown"></div>
   </div>
   <div class="progress-wrap">
     <div class="progress-dots" id="final-dots"></div>
@@ -278,6 +327,19 @@ body{font-family:'Segoe UI','Hiragino Sans','Meiryo',sans-serif;background:#f0f4
   <div class="nav-btns" style="margin-top:20px">
     <button class="nav-btn primary" onclick="retryLevel()">もう一度チャレンジ</button>
     <button class="nav-btn secondary" onclick="goHome()">ホームに戻る</button>
+  </div>
+</div>
+
+<!-- Screen: Play Log -->
+<div id="screen-log" class="container hidden">
+  <div class="log-header">
+    <h2>📋 学習ログ</h2>
+    <p>挑戦した記録を確認できます</p>
+  </div>
+  <div id="log-content"></div>
+  <div style="text-align:center;margin-top:20px">
+    <button class="log-btn" onclick="goHome()">← ホームに戻る</button>
+    <button class="log-btn danger" onclick="clearLog()">🗑️ ログを消去</button>
   </div>
 </div>
 
@@ -660,16 +722,18 @@ let state = {
   currentQ: 0,
   totalQ: 5,
   score: 0,
-  results: [],
+  results: [],       // {correct, points, timeUsed}
+  totalPoints: 0,
   timer: null,
   timeLeft: 30,
+  questionStartTime: 0, // timestamp when question started
   isRecording: false,
   recognition: null,
   answered: false,
   // Tap-to-select state
-  currentChunks: [],   // shuffled chunks for display
-  tapAnswer: [],       // array of {index, text} in order selected
-  tileElements: []     // references to tile DOM elements
+  currentChunks: [],
+  tapAnswer: [],
+  tileElements: []
 };
 
 // ============================================================
@@ -680,6 +744,7 @@ const screenSelect = $('screen-select');
 const screenGame   = $('screen-game');
 const screenResult = $('screen-result');
 const screenScore  = $('screen-score');
+const screenLog    = $('screen-log');
 const gradeSelect  = $('grade-select');
 const levelSelect  = $('level-select');
 const bombOverlay  = $('bomb-overlay');
@@ -689,7 +754,7 @@ const explosionOverlay = $('explosion-overlay');
 // Screen Management
 // ============================================================
 function showScreen(screen) {
-  [screenSelect, screenGame, screenResult, screenScore].forEach(s => s.classList.add('hidden'));
+  [screenSelect, screenGame, screenResult, screenScore, screenLog].forEach(s => s.classList.add('hidden'));
   screen.classList.remove('hidden');
   explosionOverlay.classList.add('hidden');
   bombOverlay.classList.add('hidden');
@@ -715,11 +780,19 @@ function selectLevel(level) {
   state.questions = [...QUESTIONS[state.grade].levels[level]];
   state.currentQ = 0;
   state.score = 0;
+  state.totalPoints = 0;
   state.results = [];
   $('game-badge').textContent = QUESTIONS[state.grade].name + ' Lv.' + level;
+  $('game-points').textContent = '⭐ 0 pt';
   showScreen(screenGame);
   buildProgressDots();
   startQuestion();
+}
+
+function confirmGoHome() {
+  if (confirm('ゲームを中断してホームに戻りますか？')) {
+    goHome();
+  }
 }
 
 function goHome() {
@@ -816,7 +889,42 @@ function startQuestion() {
   explosionOverlay.classList.add('hidden');
 
   updateTimerDisplay();
+  state.questionStartTime = Date.now();
   startTimer();
+}
+
+// ============================================================
+// Points Calculation
+// ============================================================
+function calculatePoints(timeUsed) {
+  // Base: 100 points for correct answer
+  // Speed bonus: up to 200 extra for fast answers
+  // timeUsed in seconds (max 30)
+  const base = 100;
+  let speedBonus = 0;
+  if (timeUsed <= 5) speedBonus = 200;
+  else if (timeUsed <= 10) speedBonus = 150;
+  else if (timeUsed <= 15) speedBonus = 100;
+  else if (timeUsed <= 20) speedBonus = 50;
+  else if (timeUsed <= 25) speedBonus = 20;
+  return base + speedBonus;
+}
+
+function getSpeedLabel(timeUsed) {
+  if (timeUsed <= 5) return '⚡ 超スピード！';
+  if (timeUsed <= 10) return '🚀 とても速い！';
+  if (timeUsed <= 15) return '✨ 速い！';
+  if (timeUsed <= 20) return '👍 まずまず！';
+  if (timeUsed <= 25) return '🐢 ゆっくり';
+  return '😅 ギリギリ！';
+}
+
+function showPointPopup(points) {
+  const popup = document.createElement('div');
+  popup.className = 'point-popup';
+  popup.textContent = '+' + points + ' pt';
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 900);
 }
 
 // ============================================================
@@ -939,7 +1047,7 @@ function timeUp() {
   explosionOverlay.classList.remove('hidden');
   bombOverlay.classList.add('hidden');
 
-  state.results.push({ correct: false });
+  state.results.push({ correct: false, points: 0, timeUsed: 30 });
 
   setTimeout(() => {
     showResultScreen(false);
@@ -1102,11 +1210,19 @@ function checkAnswer(spoken) {
     stopTimer();
     stopRecognition();
     state.score++;
-    state.results.push({ correct: true });
+
+    const timeUsed = Math.round((Date.now() - state.questionStartTime) / 1000);
+    const points = calculatePoints(timeUsed);
+    state.totalPoints += points;
+    state.results.push({ correct: true, points: points, timeUsed: timeUsed });
+
+    // Update points display
+    $('game-points').textContent = '⭐ ' + state.totalPoints + ' pt';
 
     // Play correct sound & flash
     playCorrectSound();
     showCorrectFlash();
+    showPointPopup(points);
 
     $('recognized-text').textContent = spoken;
     $('recognized-text').classList.add('correct');
@@ -1131,16 +1247,29 @@ function checkAnswer(spoken) {
 // ============================================================
 function showResultScreen(correct) {
   const q = state.questions[state.currentQ];
+  const result = state.results[state.results.length - 1];
   showScreen(screenResult);
 
   $('result-icon').textContent = correct ? '⭕' : '❌';
   $('result-title').textContent = correct ? '正解！すごい！' : '残念...不正解';
   $('result-title').className = 'result-title ' + (correct ? 'correct-title' : 'wrong-title');
+
+  if (correct) {
+    $('result-speed').textContent = getSpeedLabel(result.timeUsed) + '（' + result.timeUsed + '秒）';
+    $('result-points').textContent = '+' + result.points + ' pt';
+    $('result-points').style.display = '';
+    $('result-points').style.background = '';
+    $('result-speed').style.display = '';
+  } else {
+    $('result-speed').style.display = 'none';
+    $('result-points').textContent = '0 pt';
+    $('result-points').style.background = 'linear-gradient(135deg,#e2e8f0,#cbd5e0)';
+  }
+
   $('result-en').textContent = q.en;
   $('result-jp').textContent = q.jp;
   $('result-grammar').textContent = q.grammar;
 
-  // Next button label
   if (state.currentQ + 1 >= state.questions.length) {
     $('next-btn').textContent = '結果を見る 🏆';
   } else {
@@ -1165,6 +1294,7 @@ function showFinalScore() {
   showScreen(screenScore);
   $('score-grade-label').textContent = QUESTIONS[state.grade].name + ' Lv.' + state.level + ' 結果';
   $('score-big').textContent = state.score + ' / ' + state.questions.length;
+  $('score-total-points').textContent = '⭐ ' + state.totalPoints + ' pt';
 
   let msg = '';
   const pct = state.score / state.questions.length;
@@ -1175,6 +1305,27 @@ function showFinalScore() {
   else msg = '📚 練習を続けましょう！';
   $('score-detail').textContent = msg;
 
+  // Points breakdown
+  const breakdown = $('score-breakdown');
+  breakdown.innerHTML = '';
+  state.results.forEach((r, i) => {
+    const row = document.createElement('div');
+    row.className = 'score-breakdown-item';
+    const label = document.createElement('span');
+    label.className = 'q-label';
+    label.textContent = '問' + (i + 1) + (r.correct ? ' ⭕' : ' ❌');
+    const pts = document.createElement('span');
+    pts.className = r.correct ? 'q-points' : 'q-wrong';
+    if (r.correct) {
+      pts.textContent = '+' + r.points + ' pt（' + r.timeUsed + '秒）';
+    } else {
+      pts.textContent = '0 pt';
+    }
+    row.appendChild(label);
+    row.appendChild(pts);
+    breakdown.appendChild(row);
+  });
+
   // Build final dots
   const wrap = $('final-dots');
   wrap.innerHTML = '';
@@ -1183,6 +1334,9 @@ function showFinalScore() {
     dot.className = 'progress-dot ' + (r.correct ? 'done-correct' : 'done-wrong');
     wrap.appendChild(dot);
   });
+
+  // Save to play log
+  savePlayLog();
 }
 
 // ============================================================
@@ -1197,6 +1351,96 @@ function speakAnswer() {
   utter.lang = 'en-US';
   utter.rate = 0.9;
   synth.speak(utter);
+}
+
+// ============================================================
+// Play Log (localStorage)
+// ============================================================
+function getLogKey() { return 'speaking-challenge-log'; }
+
+function loadLog() {
+  try {
+    return JSON.parse(localStorage.getItem(getLogKey())) || [];
+  } catch(e) { return []; }
+}
+
+function savePlayLog() {
+  const log = loadLog();
+  const now = new Date();
+  log.push({
+    date: now.toISOString(),
+    grade: state.grade,
+    gradeName: QUESTIONS[state.grade].name,
+    level: state.level,
+    score: state.score,
+    total: state.questions.length,
+    points: state.totalPoints,
+    results: state.results.map(r => ({ correct: r.correct, points: r.points, timeUsed: r.timeUsed }))
+  });
+  try {
+    localStorage.setItem(getLogKey(), JSON.stringify(log));
+  } catch(e) { console.log('Log save error:', e); }
+}
+
+function showLog() {
+  showScreen(screenLog);
+  const log = loadLog();
+  const content = $('log-content');
+  content.innerHTML = '';
+
+  if (log.length === 0) {
+    content.innerHTML = '<div class="log-empty">まだ学習記録がありません。<br>ゲームに挑戦してみましょう！</div>';
+    return;
+  }
+
+  // Group by date
+  const groups = {};
+  log.forEach(entry => {
+    const d = new Date(entry.date);
+    const key = d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate();
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(entry);
+  });
+
+  // Show newest first
+  const sortedDates = Object.keys(groups).sort((a, b) => {
+    const da = new Date(a), db = new Date(b);
+    return db - da;
+  });
+
+  sortedDates.forEach(dateStr => {
+    const group = document.createElement('div');
+    group.className = 'log-date-group';
+    const label = document.createElement('div');
+    label.className = 'log-date-label';
+    label.textContent = '📅 ' + dateStr;
+    group.appendChild(label);
+
+    groups[dateStr].slice().reverse().forEach(entry => {
+      const row = document.createElement('div');
+      row.className = 'log-entry';
+      const accuracy = Math.round((entry.score / entry.total) * 100);
+      const time = new Date(entry.date);
+      const timeStr = time.getHours().toString().padStart(2,'0') + ':' + time.getMinutes().toString().padStart(2,'0');
+      row.innerHTML =
+        '<span class="log-grade">' + entry.gradeName + ' Lv.' + entry.level + '</span>' +
+        '<span class="log-result">' +
+          '<span class="log-accuracy">' + entry.score + '/' + entry.total + '（' + accuracy + '%）</span>' +
+          '<span class="log-points">⭐' + entry.points + 'pt</span>' +
+          '<span class="log-time">' + timeStr + '</span>' +
+        '</span>';
+      group.appendChild(row);
+    });
+
+    content.appendChild(group);
+  });
+}
+
+function clearLog() {
+  if (confirm('学習ログをすべて消去しますか？')) {
+    localStorage.removeItem(getLogKey());
+    showLog();
+  }
 }
 
 // ============================================================
