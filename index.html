@@ -131,6 +131,32 @@ body{font-family:'Segoe UI','Hiragino Sans','Meiryo',sans-serif;background:#f0f4
 .score-big{font-size:3rem;font-weight:900;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .score-detail{margin-top:10px;font-size:.95rem;color:#718096}
 
+/* ===== Tap Answer Area ===== */
+.tap-answer-area{margin-bottom:20px}
+.answer-label{font-size:.85rem;color:#888;margin-bottom:8px}
+.answer-slots{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;min-height:52px;padding:12px;background:#fff;border:2px dashed #cbd5e0;border-radius:12px;margin-bottom:12px;transition:border-color .2s}
+.answer-slots.has-items{border-color:#667eea;border-style:solid}
+.answer-slot{padding:8px 16px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer;transition:transform .1s,opacity .1s;animation:slot-in .2s ease}
+.answer-slot:hover{transform:scale(1.05);opacity:.85}
+@keyframes slot-in{0%{transform:scale(0);opacity:0}100%{transform:scale(1);opacity:1}}
+.tap-btns{display:flex;gap:10px;justify-content:center}
+.tap-btn{padding:10px 20px;border:none;border-radius:10px;font-size:.9rem;font-weight:600;cursor:pointer;transition:transform .1s}
+.tap-btn:hover{transform:translateY(-2px)}
+.tap-btn.clear-btn{background:#e2e8f0;color:#4a5568}
+.tap-btn.submit-btn{background:linear-gradient(135deg,#43e97b,#38f9d7);color:#fff;box-shadow:0 3px 10px rgba(67,233,123,.3)}
+
+.word-tile{cursor:pointer;transition:transform .15s,opacity .15s,background .15s}
+.word-tile:hover{transform:translateY(-3px);box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.word-tile.selected{opacity:.3;transform:scale(.9);pointer-events:none;background:#e2e8f0;border-color:#e2e8f0}
+
+/* ===== Correct flash ===== */
+.correct-flash{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:150;background:rgba(72,187,120,.25);animation:correct-flash-anim .6s ease forwards}
+@keyframes correct-flash-anim{0%{opacity:1}100%{opacity:0}}
+
+/* Divider */
+.mode-divider{display:flex;align-items:center;gap:12px;margin:18px 0 14px;font-size:.8rem;color:#a0aec0}
+.mode-divider::before,.mode-divider::after{content:'';flex:1;height:1px;background:#e2e8f0}
+
 /* ===== Responsive ===== */
 @media(max-width:480px){
   .app-header h1{font-size:1.2rem}
@@ -188,6 +214,15 @@ body{font-family:'Segoe UI','Hiragino Sans','Meiryo',sans-serif;background:#f0f4
   <div class="timer-text" id="timer-text">30</div>
   <p class="question-jp" id="question-jp">日本語訳がここに表示されます</p>
   <div class="word-tiles" id="word-tiles"></div>
+  <div class="tap-answer-area">
+    <div class="answer-label">👆 語句をタッチして並べ替え</div>
+    <div class="answer-slots" id="answer-slots"></div>
+    <div class="tap-btns">
+      <button class="tap-btn clear-btn" onclick="clearTapAnswer()">🔄 クリア</button>
+      <button class="tap-btn submit-btn" onclick="submitTapAnswer()">✅ 答え合わせ</button>
+    </div>
+  </div>
+  <div class="mode-divider">または音声で回答</div>
   <div class="speech-area">
     <button class="mic-btn" id="mic-btn" onclick="toggleRecognition()">🎤</button>
     <span class="mic-label" id="mic-label">タップして話す</span>
@@ -454,6 +489,168 @@ const QUESTIONS = {
 };
 
 // ============================================================
+// Phrase Chunks for Grade 3, Pre-2, Grade 2
+// (Multi-word tiles to reduce difficulty)
+// ============================================================
+const CHUNKS = {
+  "3": {
+    1: [
+      ["I", "have just", "finished", "my lunch"],
+      ["She", "has been busy", "since", "this morning"],
+      ["I", "want you", "to come", "to my party"],
+      ["The book", "written by him", "is popular"],
+      ["I", "don't know", "where", "he lives"]
+    ],
+    2: [
+      ["If I", "were you", "I would", "study harder"],
+      ["He", "told me", "that", "he was sick"],
+      ["This is", "the place", "where", "I was born"],
+      ["I am", "looking forward to", "seeing you"],
+      ["The car", "was repaired", "by the mechanic"]
+    ],
+    3: [
+      ["I have", "never seen", "such a", "beautiful sunset"],
+      ["She is", "so kind that", "everyone", "likes her"],
+      ["Not only he", "but also she", "can speak", "French"],
+      ["I", "would like to", "make", "a reservation"],
+      ["How long", "have you been", "waiting", "here"]
+    ],
+    4: [
+      ["The reason", "why he left", "is unknown"],
+      ["I had", "already eaten", "when", "she arrived"],
+      ["He speaks", "as if", "he knew", "everything"],
+      ["It", "has been raining", "since yesterday"],
+      ["I am", "used to", "getting up", "early"]
+    ],
+    5: [
+      ["No matter how", "hard I try", "I cannot", "solve it"],
+      ["The teacher", "made us", "clean", "the classroom"],
+      ["I wish", "I had studied", "harder", "in school"],
+      ["The more", "you practice", "the better", "you become"],
+      ["She", "must have been", "very surprised"]
+    ]
+  },
+  "pre2": {
+    1: [
+      ["I would rather", "stay home", "than", "go out"],
+      ["The meeting", "is supposed to", "start", "at three"],
+      ["It is", "worth visiting", "that museum"],
+      ["She seems", "to be interested", "in science"],
+      ["I have", "no idea", "what he is", "talking about"]
+    ],
+    2: [
+      ["Had I known", "the truth", "I would have", "told you"],
+      ["Not until", "he left", "did I realize", "his importance"],
+      ["She insisted", "that he", "attend", "the meeting"],
+      ["The news that", "he passed the exam", "made us happy"],
+      ["I cannot", "help but", "admire", "her courage"]
+    ],
+    3: [
+      ["It goes", "without saying", "that health", "is important"],
+      ["There is", "no point in", "worrying", "about it"],
+      ["I am afraid", "that", "I cannot come", "tomorrow"],
+      ["She", "takes after", "her mother", "in many ways"],
+      ["You", "had better not", "eat too much", "before bed"]
+    ],
+    4: [
+      ["By the time", "we arrived", "the concert", "had already started"],
+      ["Were it not", "for your help", "I would", "fail"],
+      ["Whatever happens", "I will", "support you"],
+      ["The fact remains", "that", "we need", "more time"],
+      ["He is", "anything but", "a fool"]
+    ],
+    5: [
+      ["It is not until", "you lose health", "that you realize", "its value"],
+      ["To tell the truth", "I have never", "liked him"],
+      ["She is", "the last person", "to tell", "a lie"],
+      ["All you have to do", "is press", "this button"],
+      ["It is high time", "we took action", "on this problem"]
+    ]
+  },
+  "2": {
+    1: [
+      ["I would appreciate", "it if", "you could reply", "soon"],
+      ["The research", "suggests that", "exercise", "improves memory"],
+      ["It is essential", "that everyone", "participate in", "the discussion"],
+      ["The number of", "tourists", "has been increasing", "every year"],
+      ["She is known", "to be", "an excellent", "researcher"]
+    ],
+    2: [
+      ["Hardly had", "he arrived", "when", "the meeting began"],
+      ["The government", "should have taken", "measures", "earlier"],
+      ["Were I", "in your position", "I would accept", "the offer"],
+      ["The issue is", "too complicated", "to be solved", "easily"],
+      ["It remains", "to be seen", "whether", "the plan will succeed"]
+    ],
+    3: [
+      ["Never before", "have I seen", "such a", "magnificent view"],
+      ["So impressed", "was she", "that she was", "speechless"],
+      ["The proposal", "is likely to", "be approved", "by the committee"],
+      ["Only after", "careful consideration", "did they make", "a decision"],
+      ["We need to", "take into account", "the environmental", "impact"]
+    ],
+    4: [
+      ["On no account", "should you", "disclose", "this information"],
+      ["The technology", "has made it", "possible to work", "from anywhere"],
+      ["Provided that", "you finish", "on time", "you may leave early"],
+      ["What matters most", "is how", "we deal with", "the problem"],
+      ["Not a single word", "did he say", "during", "the meeting"]
+    ],
+    5: [
+      ["Had it not been", "for the scholarship", "I could not have", "studied abroad"],
+      ["Little did I know", "that my life", "was about to", "change"],
+      ["It is no exaggeration", "to say that", "the Internet", "has changed our lives"],
+      ["The experience", "enabled me to", "see things", "from a different perspective"],
+      ["In no way", "does this imply", "that the project", "has been abandoned"]
+    ]
+  }
+};
+
+// ============================================================
+// Sound Effects (Web Audio API)
+// ============================================================
+function playCorrectSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.25, ctx.currentTime + i * 0.15);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.15 + 0.5);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + i * 0.15);
+      osc.stop(ctx.currentTime + i * 0.15 + 0.5);
+    });
+    // Bonus high sparkle
+    setTimeout(() => {
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'triangle';
+      osc2.frequency.value = 1318.51; // E6
+      gain2.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(ctx.currentTime);
+      osc2.stop(ctx.currentTime + 0.6);
+    }, 500);
+  } catch(e) {
+    console.log('Audio not supported:', e);
+  }
+}
+
+function showCorrectFlash() {
+  const flash = document.createElement('div');
+  flash.className = 'correct-flash';
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 700);
+}
+
+// ============================================================
 // Game State
 // ============================================================
 let state = {
@@ -463,12 +660,16 @@ let state = {
   currentQ: 0,
   totalQ: 5,
   score: 0,
-  results: [],  // per-question results: {correct: bool}
+  results: [],
   timer: null,
   timeLeft: 30,
   isRecording: false,
   recognition: null,
-  answered: false
+  answered: false,
+  // Tap-to-select state
+  currentChunks: [],   // shuffled chunks for display
+  tapAnswer: [],       // array of {index, text} in order selected
+  tileElements: []     // references to tile DOM elements
 };
 
 // ============================================================
@@ -561,18 +762,35 @@ function updateProgressDots() {
 // ============================================================
 // Question Logic
 // ============================================================
+function getChunksForQuestion(grade, level, qIndex) {
+  if (CHUNKS[grade] && CHUNKS[grade][level] && CHUNKS[grade][level][qIndex]) {
+    return CHUNKS[grade][level][qIndex];
+  }
+  return null;
+}
+
 function startQuestion() {
   state.answered = false;
   state.timeLeft = 30;
+  state.tapAnswer = [];
+  state.tileElements = [];
   const q = state.questions[state.currentQ];
 
   $('q-counter').textContent = (state.currentQ + 1) + ' / ' + state.questions.length;
   $('question-jp').textContent = '💬 ' + q.jp;
   updateProgressDots();
 
-  // Scramble words
-  const words = q.en.replace(/[.!?,]/g, '').split(/\s+/);
-  const shuffled = shuffleArray([...words]);
+  // Get chunks (multi-word for grade 3/pre2/2) or single words
+  const chunks = getChunksForQuestion(state.grade, state.level, state.currentQ);
+  let pieces;
+  if (chunks) {
+    pieces = [...chunks];
+  } else {
+    pieces = q.en.replace(/[.!?,]/g, '').split(/\s+/);
+  }
+  const shuffled = shuffleArray([...pieces]);
+  state.currentChunks = shuffled;
+
   const tiles = $('word-tiles');
   tiles.innerHTML = '';
   shuffled.forEach((w, i) => {
@@ -580,8 +798,15 @@ function startQuestion() {
     tile.className = 'word-tile';
     tile.style.animationDelay = (i * 0.08) + 's';
     tile.textContent = w;
+    tile.dataset.index = i;
+    tile.addEventListener('click', () => tapSelectTile(i));
     tiles.appendChild(tile);
+    state.tileElements.push(tile);
   });
+
+  // Clear tap answer area
+  $('answer-slots').innerHTML = '';
+  $('answer-slots').classList.remove('has-items');
 
   $('recognized-text').textContent = 'ここに認識結果が表示されます';
   $('recognized-text').className = 'recognized-text';
@@ -592,6 +817,56 @@ function startQuestion() {
 
   updateTimerDisplay();
   startTimer();
+}
+
+// ============================================================
+// Tap-to-Select Logic
+// ============================================================
+function tapSelectTile(index) {
+  if (state.answered) return;
+  const tile = state.tileElements[index];
+  if (tile.classList.contains('selected')) return;
+
+  tile.classList.add('selected');
+  state.tapAnswer.push({ index: index, text: state.currentChunks[index] });
+  renderAnswerSlots();
+}
+
+function tapUnselectTile(answerIndex) {
+  if (state.answered) return;
+  const item = state.tapAnswer[answerIndex];
+  state.tileElements[item.index].classList.remove('selected');
+  state.tapAnswer.splice(answerIndex, 1);
+  renderAnswerSlots();
+}
+
+function renderAnswerSlots() {
+  const slots = $('answer-slots');
+  slots.innerHTML = '';
+  slots.classList.toggle('has-items', state.tapAnswer.length > 0);
+  state.tapAnswer.forEach((item, i) => {
+    const slot = document.createElement('span');
+    slot.className = 'answer-slot';
+    slot.textContent = item.text;
+    slot.addEventListener('click', () => tapUnselectTile(i));
+    slots.appendChild(slot);
+  });
+}
+
+function clearTapAnswer() {
+  if (state.answered) return;
+  state.tapAnswer.forEach(item => {
+    state.tileElements[item.index].classList.remove('selected');
+  });
+  state.tapAnswer = [];
+  renderAnswerSlots();
+}
+
+function submitTapAnswer() {
+  if (state.answered) return;
+  if (state.tapAnswer.length === 0) return;
+  const spoken = state.tapAnswer.map(item => item.text).join(' ');
+  checkAnswer(spoken);
 }
 
 function shuffleArray(arr) {
@@ -829,16 +1104,25 @@ function checkAnswer(spoken) {
     state.score++;
     state.results.push({ correct: true });
 
+    // Play correct sound & flash
+    playCorrectSound();
+    showCorrectFlash();
+
     $('recognized-text').textContent = spoken;
     $('recognized-text').classList.add('correct');
 
-    setTimeout(() => showResultScreen(true), 800);
+    setTimeout(() => showResultScreen(true), 1200);
   } else {
     // Show interim text but keep listening
     $('recognized-text').textContent = spoken;
     // Flash wrong briefly
     $('recognized-text').classList.add('wrong');
     setTimeout(() => $('recognized-text').classList.remove('wrong'), 600);
+    // Also flash answer slots border if tap mode
+    const slots = $('answer-slots');
+    slots.style.borderColor = '#fc8181';
+    slots.style.background = '#fff5f5';
+    setTimeout(() => { slots.style.borderColor = ''; slots.style.background = ''; }, 600);
   }
 }
 
